@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <title>计算机网络实验二</title>
+    <link rel="stylesheet" href="css/index.css">
+</head>
+<body>
+<div id="cover">
+    <div id="box">
+        <div class="select">请选择发送方还是接收方</div>
+        <div id="sender" class="btns">发送方</div>
+        <div id="receiver" class="btns">接收方</div>
+    </div>
+</div>
+<div id="container">
+    <div id="title">计算机网络实验二</div>
+    <div id="num">消息框 <span id="who"></span></div>
+    <div id="messagebox"></div>
+    <div id="input">
+        <input type="text" id="message" placeholder="请输入聊天信息(输入cls清屏)">
+        <div id="send">发送</div>
+    </div>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+    (function () {
+        var socket = io.connect();
+        var aBtns = document.querySelectorAll("#box .btns");
+        var oCover = document.getElementById("cover");
+        var oInput = document.getElementById("input");
+        var user = "";
+        for (var i = 0; i < aBtns.length; i++) {
+            aBtns[i].onclick = function () {
+                socket.emit("login", this.innerHTML);
+                if (this.innerHTML == "接收方") {
+                    oInput.style.opacity = 0;
+                }
+                user = this.innerHTML;
+            };
+        }
+        var oMessageBox = document.getElementById("messagebox");
+        var oWho = document.getElementById("who");
+        socket.on("loginSuccess", function (data) {
+            oCover.style.display = "none";
+            oMessageBox.innerHTML += '<div style="color: #f00;">' + data + '已连接到服务器..</div>';
+            oWho.innerHTML = "("+ data +")";
+        });
+        var oSend = document.getElementById("send");
+        var oMessage = document.getElementById("message");
+        oSend.onclick = function () {
+            if (oMessage.value.trim().length != 0) {
+                socket.emit("send", oMessage.value);
+                oMessage.value = "";
+            }
+        };
+        socket.on("sending", show);
+        socket.on("isLost", show);
+        socket.on("isRight", show);
+        socket.on("crcWrong", show);
+        socket.on("crcRight", show);
+        socket.on("cls", function(){
+            oMessageBox.innerHTML = "";
+        });
+
+        oMessage.onkeydown = function(e){
+            if(e.keyCode == 13){
+                oSend.onclick();
+            }
+        };
+        //编写函数用来显示消息
+        function show(sender, receiver) {
+            if (user == "发送方") {
+                oMessageBox.innerHTML += sender;
+            }
+            if (user == "接收方") {
+                oMessageBox.innerHTML += receiver;
+            }
+        }
+    })();
+</script>
+</body>
+</html>
